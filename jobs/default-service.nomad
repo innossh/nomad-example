@@ -1,6 +1,5 @@
 job "default-service" {
   datacenters = ["dc1"]
-  type = "service"
 
   group "default-service" {
     count = 1
