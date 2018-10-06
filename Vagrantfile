@@ -113,7 +113,7 @@ Vagrant.configure(2) do |config|
   config.vm.provision "shell", inline: $script, privileged: false
   config.vm.provision "docker" # Just install it
   
-  config.vm.network "private_network", ip: "10.0.2.15"
+  config.vm.network "private_network", ip: "192.168.33.10"
 
   # Expose the nomad api and ui to the host
   config.vm.network "forwarded_port", guest: 4646, host: 4646, auto_correct: true

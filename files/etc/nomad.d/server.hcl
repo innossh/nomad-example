@@ -4,9 +4,9 @@ name = "nomad"
 data_dir  = "/var/lib/nomad"
 
 advertise {
-  http = "10.0.2.15"
-  rpc  = "10.0.2.15"
-  serf = "10.0.2.15"
+  http = "192.168.33.10"
+  rpc  = "192.168.33.10"
+  serf = "192.168.33.10"
 }
 
 server {
@@ -21,10 +21,4 @@ client {
 
 consul {
   address = "127.0.0.1:8500"
-}
-
-telemetry {
-  publish_allocation_metrics = true
-  publish_node_metrics       = true
-  prometheus_metrics         = true
 }

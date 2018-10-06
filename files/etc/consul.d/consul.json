@@ -7,6 +7,6 @@
     "bootstrap_expect": 1,
     "bind_addr": "0.0.0.0",
     "client_addr": "0.0.0.0",
-    "advertise_addr": "10.0.2.15",
+    "advertise_addr": "192.168.33.10",
     "recursors": ["8.8.8.8", "8.8.4.4"]
 }
