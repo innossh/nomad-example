@@ -12,14 +12,14 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y unzip curl vim \
     software-properties-common
 
 # Download Nomad
-NOMAD_VERSION=0.8.1
+NOMAD_VERSION=0.8.6
 
 echo "Fetching Nomad..."
 cd /tmp/
 curl -sSL https://releases.hashicorp.com/nomad/${NOMAD_VERSION}/nomad_${NOMAD_VERSION}_linux_amd64.zip -o nomad.zip
 
 echo "Fetching Consul..."
-CONSUL_VERSION=1.0.7
+CONSUL_VERSION=1.2.3
 curl -sSL https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip > consul.zip
 
 echo "Installing Nomad..."
@@ -28,6 +28,8 @@ sudo install nomad /usr/bin/nomad
 
 sudo mkdir -p /etc/nomad.d
 sudo chmod a+w /etc/nomad.d
+sudo mkdir -p /var/lib/nomad
+sudo chmod a+w /var/lib/nomad
 
 # Set hostname's IP to made advertisement Just Work
 #sudo sed -i -e "s/.*nomad.*/$(ip route get 1 | awk '{print $NF;exit}') nomad/" /etc/hosts
@@ -51,6 +53,8 @@ sudo usermod -aG docker vagrant
 echo "Installing Consul..."
 unzip /tmp/consul.zip
 sudo install consul /usr/bin/consul
+sudo mkdir -p /var/lib/consul
+sudo chmod a+w /var/lib/consul
 (
 cat <<-EOF
 	[Unit]
@@ -60,7 +64,7 @@ cat <<-EOF
 	
 	[Service]
 	Restart=on-failure
-	ExecStart=/usr/bin/consul agent -dev
+	ExecStart=/usr/bin/consul agent -config-dir=/vagrant/files/etc/consul.d
 	ExecReload=/bin/kill -HUP $MAINPID
 	
 	[Install]
@@ -80,14 +84,37 @@ done
 echo "Installing autocomplete..."
 nomad -autocomplete-install
 
+echo "Starting nomad..."
+(
+cat <<-EOF
+	[Unit]
+	Description=nomad agent
+	Requires=network-online.target
+	After=network-online.target
+	
+	[Service]
+	Restart=on-failure
+	ExecStart=/usr/bin/nomad agent -config=/vagrant/files/etc/nomad.d
+	ExecReload=/bin/kill -HUP $MAINPID
+	
+	[Install]
+	WantedBy=multi-user.target
+EOF
+) | sudo tee /etc/systemd/system/nomad.service
+sudo systemctl enable nomad.service
+sudo systemctl start nomad
+
 SCRIPT
 
 Vagrant.configure(2) do |config|
   config.vm.box = "bento/ubuntu-16.04" # 16.04 LTS
+  config.vm.box_version = "201808.24.0"
   config.vm.hostname = "nomad"
   config.vm.provision "shell", inline: $script, privileged: false
   config.vm.provision "docker" # Just install it
   
+  config.vm.network "private_network", ip: "10.0.2.15"
+
   # Expose the nomad api and ui to the host
   config.vm.network "forwarded_port", guest: 4646, host: 4646, auto_correct: true
 
